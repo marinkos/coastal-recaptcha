@@ -1,4 +1,14 @@
 export default async function handler(req, res) {
+  // Set CORS headers
+  res.setHeader('Access-Control-Allow-Origin', 'https://www.coastaldebt.com');
+  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  
+  // Handle preflight OPTIONS request
+  if (req.method === 'OPTIONS') {
+    return res.status(200).end();
+  }
+  
   // Only allow POST requests
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
@@ -10,13 +20,13 @@ export default async function handler(req, res) {
     return res.status(400).json({ error: 'Token is required' });
   }
 
-  // Use environment variable instead of hardcoding
+  // Use environment variable
   const API_KEY = process.env.RECAPTCHA_API_KEY;
   
   const requestBody = {
     event: {
       token: token,
-      expectedAction: 'submit', 
+      expectedAction: 'submit',
       siteKey: "6LeqYp0rAAAAAOiJBe8DaA55iCdx5AlmnYgt7ZDz"
     }
   };
@@ -35,6 +45,9 @@ export default async function handler(req, res) {
 
     const data = await response.json();
     
+    // Log for debugging
+    console.log('reCAPTCHA response:', data);
+    
     // Check if verification was successful
     if (data.tokenProperties?.valid && data.riskAnalysis?.score >= 0.5) {
       return res.status(200).json({ 
@@ -44,7 +57,8 @@ export default async function handler(req, res) {
     } else {
       return res.status(400).json({ 
         success: false, 
-        score: data.riskAnalysis?.score || 0 
+        score: data.riskAnalysis?.score || 0,
+        reason: data.tokenProperties?.invalidReason || 'Unknown'
       });
     }
   } catch (error) {
