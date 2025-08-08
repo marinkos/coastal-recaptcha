@@ -1,26 +1,53 @@
 export default async function handler(req, res) {
-  // Enable CORS if needed
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  
+  // Only allow POST requests
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
   const { token } = req.body;
-  
-  const response = await fetch('https://www.google.com/recaptcha/api/siteverify', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/x-www-form-urlencoded',
-    },
-    body: `secret=${process.env.RECAPTCHA_SECRET_KEY}&response=${token}`
-  });
 
-  const data = await response.json();
-
-  if (data.success && data.score > 0.5) {
-    return res.status(200).json({ success: true, score: data.score });
+  if (!token) {
+    return res.status(400).json({ error: 'Token is required' });
   }
+
+  const API_KEY = 'AIzaSyA65uYdDcLz-g101TcYjpPYobpQhs1lozw';
   
-  return res.status(400).json({ success: false });
+  const requestBody = {
+    event: {
+      token: token,
+      expectedAction: 'submit', // or whatever action you're using
+      siteKey: "6LeqYp0rAAAAAOiJBe8DaA55iCdx5AlmnYgt7ZDz"
+    }
+  };
+
+  try {
+    const response = await fetch(
+      `https://recaptchaenterprise.googleapis.com/v1/projects/taboola-468311/assessments?key=${API_KEY}`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(requestBody)
+      }
+    );
+
+    const data = await response.json();
+    
+    // Check if verification was successful
+    if (data.tokenProperties?.valid && data.riskAnalysis?.score >= 0.5) {
+      return res.status(200).json({ 
+        success: true, 
+        score: data.riskAnalysis.score 
+      });
+    } else {
+      return res.status(400).json({ 
+        success: false, 
+        score: data.riskAnalysis?.score || 0 
+      });
+    }
+  } catch (error) {
+    console.error('reCAPTCHA verification error:', error);
+    return res.status(500).json({ error: 'Verification failed' });
+  }
 }
