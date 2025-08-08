@@ -10,7 +10,8 @@ export default async function handler(req, res) {
     return res.status(400).json({ error: 'Token is required' });
   }
 
-  const API_KEY = 'AIzaSyA65uYdDcLz-g101TcYjpPYobpQhs1lozw';
+  // Use environment variable instead of hardcoding
+  const API_KEY = process.env.RECAPTCHA_API_KEY;
   
   const requestBody = {
     event: {
