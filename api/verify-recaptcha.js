@@ -15,7 +15,7 @@ export default async function handler(req, res) {
   const requestBody = {
     event: {
       token: token,
-      expectedAction: 'submit', // or whatever action you're using
+      expectedAction: 'submit', 
       siteKey: "6LeqYp0rAAAAAOiJBe8DaA55iCdx5AlmnYgt7ZDz"
     }
   };
